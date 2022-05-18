@@ -1,0 +1,26 @@
+[package]
+name = "m3u8-downloader"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = {version = "1", features=["full"]}
+reqwest = "0"
+structopt = "0"
+anyhow = "1"
+log = { version = "0" }
+env_logger = "0"
+indicatif = {version = "0", features = ["improved_unicode"]}
+console = "0"
+futures = "0"
+tempfile = "3"
+
+[profile.release]
+opt-level = "s"
+lto = true
+panic = "abort"
+# options["none", "debuginfo", "symbols", true, false]
+# the default is "none", true = "symbols", false = "none"
+strip = true
