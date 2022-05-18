@@ -1,21 +1,18 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, usize};
 
-use structopt::StructOpt;
+use clap::Parser;
 
 /// m3u8 downloader
-#[derive(StructOpt, Debug)]
-#[structopt(name = "m3u8-downloader")]
+#[derive(Parser, Debug)]
+#[clap(author, version, about, name = "m3u8-downloader")]
 pub struct Opt {
     /// url to download
-    #[structopt(long = "url")]
+    #[clap(long)]
     pub url: String,
     /// dest path
-    #[structopt(short = "d", long = "dest")]
+    #[clap(short, long)]
     pub dest: PathBuf,
-}
-
-impl Opt {
-    pub fn parse() -> Opt {
-        Opt::from_args()
-    }
+    /// dest path
+    #[clap(short, long, default_value = "20")]
+    pub worker: usize,
 }

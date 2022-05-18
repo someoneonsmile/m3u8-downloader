@@ -1,93 +1,160 @@
-use console::{style, Emoji};
-use indicatif::{HumanDuration, ProgressBar, ProgressStyle};
-use log::*;
+use clap::Parser;
+use console::Emoji;
+use futures::stream::{StreamExt, TryStreamExt};
+use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 use std::path::Path;
-use std::sync::Arc;
 use std::time::Instant;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
-use tokio::task::JoinHandle;
 
 mod cli;
 
-type Result<O> = anyhow::Result<O>;
+type Result<Output> = anyhow::Result<Output>;
 
-static PREFIX_EMOJI: Emoji<'_, '_> = Emoji("🛸🚀", "");
+/// prefix emoji
+static PREFIX_EMOJIS: [Emoji<'_, '_>; 5] = [
+    Emoji("🛸", ""),
+    Emoji("🚀", ""),
+    Emoji("🛴", ""),
+    Emoji("🏍", ""),
+    Emoji("🛹", ""),
+];
+
+/// 最大同时下载数
+static MAX_PARALLEL_DOWNLOAD: usize = 50;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let started = Instant::now();
 
-    env_logger::Builder::from_default_env()
-        .parse_filters("info")
-        .default_format()
-        .format_level(true)
-        .format_target(false)
-        .format_module_path(false)
-        .format_timestamp(None)
-        .init();
+    // TODO: replace with color_eyon, tracing
+    // env_logger::Builder::from_default_env()
+    //     .parse_filters("info")
+    //     .default_format()
+    //     .format_level(true)
+    //     .format_target(false)
+    //     .format_module_path(false)
+    //     .format_timestamp(None)
+    //     .init();
 
-    let opt = cli::Opt::parse();
-    debug!("opt: {:?}", opt);
+    let mut opt = cli::Opt::parse();
+    opt.worker = std::cmp::min(opt.worker, MAX_PARALLEL_DOWNLOAD);
+    let opt = opt;
+
+    let mut rng = thread_rng();
+
+    // reqwest client
+    // DNS resolve with trust_dns
+    let client = reqwest::ClientBuilder::new().trust_dns(true).build()?;
 
     let url = opt.url.as_str();
-    let base_url = url.split_at(url.rfind('/').expect("please input the m3u8 url")).0;
+    let base_url = url
+        .split_at(url.rfind('/').expect("please input the m3u8 url"))
+        .0;
 
+    // 生成临时下载目录
     let tmp_dir = tokio::task::spawn_blocking(move || {
         tempfile::Builder::new().prefix("m3u8-downloader").tempdir()
     })
     .await??;
-    let tmp_list_path = "ts_list.txt";
 
-    let client = reqwest::Client::new();
+    // 下载文件清单文件
+    let ts_list_file_path = "ts_list.txt";
     let ts_list_str = client.get(url).send().await?.text().await?;
     let ts_list: Vec<&str> = ts_list_str
         .lines()
         .filter(|line| !line.is_empty() && !line.trim_start().starts_with('#'))
         .collect();
-
-    // 生成文件清单文件
     let content = ts_list
         .iter()
         .map(|line| format!("file {}\n", line))
         .collect::<String>();
-    let mut tmp_list_file = fs::File::create(tmp_dir.path().join(tmp_list_path)).await?;
+    let mut tmp_list_file = fs::File::create(tmp_dir.path().join(ts_list_file_path)).await?;
     tmp_list_file.write_all(content.as_bytes()).await?;
 
     // 进度条
-    let spinner_style = ProgressStyle::default_spinner()
-        .tick_chars("⠁⠁⠂⠄⡀⡀⢀⠠⠐⠈⠈")
-        .template(&format!(
-            "{}",
-            style(format!(
-                "{{prefix:.bold}} {{spinner}} {}: {{wide_msg}}",
-                PREFIX_EMOJI
-            ))
-            .bold()
-            .yellow()
-        ));
-    let progress_bar = ProgressBar::new(ts_list.len() as u64);
-    progress_bar.set_style(spinner_style);
+    let main_bar = MultiProgress::new();
 
-    // 下载 ts_list
-    let mut handles = Vec::<JoinHandle<Result<()>>>::new();
-    let client = Arc::new(client);
-    for ts in ts_list {
-        let client = client.clone();
-        let progress_bar = progress_bar.clone();
-        let mut ts = ts.to_owned().clone();
-        ts = format!("{}/{}", base_url, ts);
-        handles.push(tokio::spawn(async move {
-            download_file(&client, &ts, "").await?;
-            progress_bar.inc(1);
-            Ok(()) as Result<()>
-        }));
-    }
-    for handle in handles {
-        handle.await??;
+    let pb_style = ProgressStyle::with_template(
+        "{spinner:.green} {prefix} [{elapsed_precise}] [{bar:60.cyan/blue}] [{bytes}/{total_bytes}] {binary_bytes_per_sec} ({eta})",
+    )?
+    .progress_chars("#>-");
+
+    // 并发下载 ts_list
+    let buffered = futures::stream::iter(ts_list)
+        .map(|ts| {
+            let client = client.clone();
+            let ts_url = format!("{}/{}", base_url, ts);
+            let ts_file_path = tmp_dir.path().join(ts);
+            let pb = main_bar.add(ProgressBar::new(0));
+            pb.set_style(pb_style.clone());
+            pb.set_prefix(format!(
+                "{} [downloading {}]",
+                PREFIX_EMOJIS.choose(&mut rng).unwrap(),
+                ts
+            ));
+            async move { download_file(client, &ts_url, ts_file_path, pb).await }
+        })
+        .buffer_unordered(opt.worker);
+
+    buffered.try_collect::<Vec<()>>().await?;
+
+    // 合并视频
+    merge_video(tmp_dir.path(), ts_list_file_path, opt.dest).await?;
+
+    // 打印用时统计
+    println!(
+        "take: {}",
+        HumanDuration(Instant::now().duration_since(started))
+    );
+
+    Ok(())
+}
+
+async fn download_file<P>(
+    client: reqwest::Client,
+    url: &str,
+    dest: P,
+    pb: ProgressBar,
+) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    // https://gist.github.com/giuliano-oliveira/4d11d6b3bb003dba3a1b53f43d81b30d
+
+    let response = client.get(url).send().await?;
+
+    let total_size = response
+        .content_length()
+        .ok_or_else(|| anyhow::format_err!("can't get the content_length"))?;
+
+    // 进度条长度
+    pb.set_length(total_size);
+
+    let mut dest = fs::File::create(dest).await?;
+    let mut downloaded: u64 = 0;
+
+    // 流下载
+    let mut stream = response.bytes_stream();
+    while let Some(item) = stream.next().await {
+        let chunk = item?;
+        dest.write_all(&chunk).await?;
+        downloaded = std::cmp::min(downloaded + (chunk.len() as u64), total_size);
+        pb.set_position(downloaded);
     }
 
+    pb.finish_and_clear();
+    Ok(())
+}
+
+async fn merge_video<P1, P2>(tmp_dir: P1, ts_list_file_path: &str, dest: P2) -> Result<()>
+where
+    P1: AsRef<Path>,
+    P2: AsRef<std::ffi::OsStr>,
+{
     // 调用 ffmpeg 合并文件
     // command = 'ffmpeg -y -f concat -i %s -bsf:a aac_adtstoasc -c copy %s' % (concatfile, path)
     Command::new("ffmpeg")
@@ -95,30 +162,15 @@ async fn main() -> Result<()> {
         .arg("-f")
         .arg("concat")
         .arg("-i")
-        .arg(tmp_list_path)
+        .arg(ts_list_file_path)
         .arg("-bsf:a")
         .arg("aac_adtstoasc")
         .arg("-c")
         .arg("copy")
-        .arg(opt.dest)
+        .arg(dest)
         .current_dir(tmp_dir)
         .spawn()?
         .wait()
         .await?;
-
-    info!(
-        "take: {}",
-        HumanDuration(Instant::now().duration_since(started))
-    );
-    Ok(())
-}
-
-async fn download_file<P>(client: &reqwest::Client, url: &str, dest: P) -> Result<()>
-where
-    P: AsRef<Path>,
-{
-    let content = client.get(url).send().await?.text().await?;
-    let mut dest = fs::File::create(dest).await?;
-    dest.write_all(content.as_bytes()).await?;
     Ok(())
 }
