@@ -31,6 +31,9 @@ async fn main() -> Result<()> {
     let opt = cli::Opt::parse();
     debug!("opt: {:?}", opt);
 
+    let url = opt.url.as_str();
+    let base_url = url.split_at(url.rfind('/').expect("please input the m3u8 url")).0;
+
     let tmp_dir = tokio::task::spawn_blocking(move || {
         tempfile::Builder::new().prefix("m3u8-downloader").tempdir()
     })
@@ -38,7 +41,7 @@ async fn main() -> Result<()> {
     let tmp_list_path = "ts_list.txt";
 
     let client = reqwest::Client::new();
-    let ts_list_str = client.get(opt.url).send().await?.text().await?;
+    let ts_list_str = client.get(url).send().await?.text().await?;
     let ts_list: Vec<&str> = ts_list_str
         .lines()
         .filter(|line| !line.is_empty() && !line.trim_start().starts_with('#'))
@@ -73,7 +76,8 @@ async fn main() -> Result<()> {
     for ts in ts_list {
         let client = client.clone();
         let progress_bar = progress_bar.clone();
-        let ts = ts.to_owned().clone();
+        let mut ts = ts.to_owned().clone();
+        ts = format!("{}/{}", base_url, ts);
         handles.push(tokio::spawn(async move {
             download_file(&client, &ts, "").await?;
             progress_bar.inc(1);
