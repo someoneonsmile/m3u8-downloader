@@ -2,8 +2,6 @@ use clap::Parser;
 use console::Emoji;
 use futures::stream::{StreamExt, TryStreamExt};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
-use rand::seq::SliceRandom;
-use rand::thread_rng;
 use std::path::Path;
 use std::time::Instant;
 use tokio::fs;
@@ -15,11 +13,10 @@ mod cli;
 type Result<Output> = anyhow::Result<Output>;
 
 /// prefix emoji
-static PREFIX_EMOJIS: [Emoji<'_, '_>; 5] = [
+static PREFIX_EMOJIS: [Emoji<'_, '_>; 4] = [
     Emoji("🛸", ""),
     Emoji("🚀", ""),
     Emoji("🛴", ""),
-    Emoji("🏍", ""),
     Emoji("🛹", ""),
 ];
 
@@ -43,8 +40,6 @@ async fn main() -> Result<()> {
     let mut opt = cli::Opt::parse();
     opt.worker = std::cmp::min(opt.worker, MAX_PARALLEL_DOWNLOAD);
     let opt = opt;
-
-    let mut rng = thread_rng();
 
     // reqwest client
     // DNS resolve with trust_dns
@@ -83,6 +78,8 @@ async fn main() -> Result<()> {
     )?
     .progress_chars("#>-");
 
+    let mut emoji_iter = PREFIX_EMOJIS.iter().cycle();
+    // TODO: 是否可以生成多个 tokio 任务, 在多个线程同时执行
     // 并发下载 ts_list
     let buffered = futures::stream::iter(ts_list)
         .map(|ts| {
@@ -93,7 +90,7 @@ async fn main() -> Result<()> {
             pb.set_style(pb_style.clone());
             pb.set_prefix(format!(
                 "{} [downloading {}]",
-                PREFIX_EMOJIS.choose(&mut rng).unwrap(),
+                emoji_iter.next().unwrap(),
                 ts
             ));
             async move { download_file(client, &ts_url, ts_file_path, pb).await }

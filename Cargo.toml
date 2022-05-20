@@ -16,8 +16,8 @@ indicatif = {git = "https://github.com/console-rs/indicatif", features = ["impro
 console = "0"
 futures = "0"
 tempfile = "3"
-rand = "0"
 
+# rand = "0"
 # log = {version = "0"}
 # env_logger = "0"
 # lazy_static = "1"
