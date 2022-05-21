@@ -31,11 +31,11 @@ jobs:
       release_version: ${{ env.release_version }}
       upload_url: ${{ steps.release.outputs.upload_url }}
     steps:
-      - if: github.event_name == "workflow_dispatch"
+      - if: github.event_name == 'workflow_dispatch'
         run: echo "release_version=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
-      - if: github.event_name == "schedule"
+      - if: github.event_name == 'schedule'
         run: echo "release_version=nightly" >> $GITHUB_ENV
-      - if: github.event_name == "push"
+      - if: github.event_name == 'push'
         run: echo "release_version=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           # echo "::set-output name=release_version::${{ env.release_version }}"
       - id: release
@@ -112,7 +112,7 @@ jobs:
 
   update-release:
     name: update-release
-    needs: ["create-release"]
+    needs: [create-release]
     runs-on: ${{ matrix.build.os }}
     continue-on-error: true
     strategy:
@@ -175,10 +175,10 @@ jobs:
           args: --release --target=${{ matrix.build.target }}
           use-cross: ${{ env.USE_CROSS }}
       - name: Strip release binary (linux and macos)
-        if: matrix.build.plat == "linux" || matrix.build.plat == "macos"
+        if: matrix.build.plat == 'linux' || matrix.build.plat == 'macos'
         run: strip "target/${{ matrix.build.target }}/release/${{ env.RELEASE_NAME }}"
       - name: Strip release binary (arm)
-        if: matrix.build.plat == "linux-arm"
+        if: matrix.build.plat == 'linux-arm'
         run: |
           docker run --rm -v \
             "$PWD/target:/target:Z" \
@@ -220,6 +220,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ matrix.upload_url }}
-          asset_path: "${{ env.ASSET }}.sha256sum"
-          asset_name: "${{ env.ASSET }}.sha256sum"
+          asset_path: ${{ env.ASSET }}.sha256sum
+          asset_name: ${{ env.ASSET }}.sha256sum
           asset_content_type: application/octet-stream
