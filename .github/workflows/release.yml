@@ -188,7 +188,7 @@ jobs:
       - name: Build archive
         shell: bash
         run: |
-          staging="${{ env.RELEASE_NAME }}-${{ needs.create-release.outputs.release_version }}-${{ matrix.build.target }}"
+          staging="${{ env.RELEASE_NAME }}-${{ matrix.build.target }}"
           mkdir -p "$staging"
           cp {README.md,LICENSE} "$staging/"
           if [ "${{ matrix.build.os }}" = "windows-latest" ]; then
