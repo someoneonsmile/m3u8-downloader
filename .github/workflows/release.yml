@@ -2,22 +2,22 @@ name: release
 
 on:
   schedule:
-    - cron: '5 5 * * *'
+    - cron: "5 5 * * *"
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Tag name for release'
+        description: "Tag name for release"
         required: false
         default: nightly
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 env:
   CARGO_TERM_COLOR: always
   USE_CROSS: true
   FETCH_DEPTH: 0
-  RELEASE_NAME: 'm3u8-downloader'
+  RELEASE_NAME: "m3u8-downloader"
 
 defaults:
   run:
@@ -31,11 +31,11 @@ jobs:
       release_version: ${{ env.release_version }}
       upload_url: ${{ steps.release.outputs.upload_url }}
     steps:
-      - if: github.event_name == 'workflow_dispatch'
+      - if: github.event_name == "workflow_dispatch"
         run: echo "release_version=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
-      - if: github.event_name == 'schedule'
-        run: echo 'release_version=nightly' >> $GITHUB_ENV
-      - if: github.event_name == 'push'
+      - if: github.event_name == "schedule"
+        run: echo "release_version=nightly" >> $GITHUB_ENV
+      - if: github.event_name == "push"
         run: echo "release_version=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           # echo "::set-output name=release_version::${{ env.release_version }}"
       - id: release
@@ -43,10 +43,10 @@ jobs:
         with:
           script: |
             let release_label
-            if ('nightly' === '${{ env.release_version }}') {
-              release_label = 'nightly';
+            if ("nightly" === "${{ env.release_version }}") {
+              release_label = "nightly";
             } else {
-              release_label = 'stable';
+              release_label = "stable";
             }
             try {
               const { data: { id:release_id } } = await github.rest.repos.getReleaseByTag({
@@ -69,7 +69,7 @@ jobs:
             } catch (e) {
               console.error(e)
             }
-            let is_nightly = 'nightly' === release_label
+            let is_nightly = "nightly" === release_label
             let upload_url = [];
             // create tag release
             let target_commitish;
@@ -77,14 +77,14 @@ jobs:
               const { data: { upload_url: tag_update_url } } = await github.rest.repos.createRelease({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                tag_name: '${{ env.release_version }}',
-                name: 'Release ${{ env.release_version }}',
+                tag_name: "${{ env.release_version }}",
+                name: "Release ${{ env.release_version }}",
               });
               upload_url.push(tag_update_url);
               const { data: { object: { sha: tag_sha } } } = await github.rest.git.getRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: 'tags/${{ env.release_version }}',
+                ref: "tags/${{ env.release_version }}",
               });
               const { data: { object: { sha: commit_sha } } } = await github.rest.git.getTag({
                 owner: context.repo.owner,
@@ -105,14 +105,14 @@ jobs:
             if (target_commitish) {
               opts.target_commitish = target_commitish
             }
-            console.log('opts:', JSON.stringify(opts))
+            console.log("opts:", JSON.stringify(opts))
             const { data: { upload_url: label_update_url } } = await github.rest.repos.createRelease(opts);
             upload_url.push(label_update_url);
-            core.setOutput('upload_url', JSON.stringify(upload_url));
+            core.setOutput("upload_url", JSON.stringify(upload_url));
 
   update-release:
     name: update-release
-    needs: ['create-release']
+    needs: ["create-release"]
     runs-on: ${{ matrix.build.os }}
     continue-on-error: true
     strategy:
@@ -175,10 +175,10 @@ jobs:
           args: --release --target=${{ matrix.build.target }}
           use-cross: ${{ env.USE_CROSS }}
       - name: Strip release binary (linux and macos)
-        if: matrix.build.plat == 'linux' || matrix.build.plat == 'macos'
+        if: matrix.build.plat == "linux" || matrix.build.plat == "macos"
         run: strip "target/${{ matrix.build.target }}/release/${{ env.RELEASE_NAME }}"
       - name: Strip release binary (arm)
-        if: matrix.build.plat == 'linux-arm'
+        if: matrix.build.plat == "linux-arm"
         run: |
           docker run --rm -v \
             "$PWD/target:/target:Z" \
@@ -192,7 +192,7 @@ jobs:
           mkdir -p "$staging"
           cp {README.md,LICENSE} "$staging/"
           if [ "${{ matrix.build.os }}" = "windows-latest" ]; then
-            cp 'target/${{ matrix.build.target }}/release/${{ env.RELEASE_NAME }}.exe' '$staging/'
+            cp "target/${{ matrix.build.target }}/release/${{ env.RELEASE_NAME }}.exe" "$staging/"
             7z a "$staging.zip" "$staging"
             echo "ASSET=$staging.zip" >> $GITHUB_ENV
             sha256sum "$staging.zip" > "$staging.zip.sha256sum"
