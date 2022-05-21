@@ -138,21 +138,21 @@ jobs:
           #   rust: stable,
           #   target: arm-unknown-linux-gnueabihf
           # },
-          # {
-          #   plat: win-msvc,
-          #   os: windows-2019,
-          #   rust: stable,
-          #   target: x86_64-pc-windows-msvc
-          # },
+          {
+            plat: win-msvc,
+            os: windows-latest,
+            rust: stable,
+            target: x86_64-pc-windows-msvc
+          },
           # {
           #   plat: win-gnu,
-          #   os: windows-2019,
+          #   os: windows-latest,
           #   rust: stable-x86_64-gnu,
           #   target: x86_64-pc-windows-gnu
           # },
           # {
           #   plat: win32-msvc,
-          #   os: windows-2019,
+          #   os: windows-latest,
           #   rust: stable,
           #   target: i686-pc-windows-msvc
           # },
@@ -191,7 +191,7 @@ jobs:
           staging="{{ env.RELEASE_NAME }}-${{ needs.create-release.outputs.release_version }}-${{ matrix.build.target }}"
           mkdir -p "$staging"
           cp {README.md,LICENSE} "$staging/"
-          if [ "${{ matrix.build.os }}" = "windows-2019" ]; then
+          if [ "${{ matrix.build.os }}" = "windows-latest" ]; then
             cp 'target/${{ matrix.build.target }}/release/{{ env.RELEASE_NAME }}.exe' '$staging/'
             7z a "$staging.zip" "$staging"
             echo "ASSET=$staging.zip" >> $GITHUB_ENV
