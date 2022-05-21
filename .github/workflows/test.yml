@@ -1,0 +1,26 @@
+name: test
+on:
+  workflow_dispatch
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      url: ${{ steps.set-url.outputs.url }}
+    steps:
+      - id: set-matrix
+        run: echo "::set-output name=matrix::[\"include\", \"project\"]"
+      - id: set-url
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.setOutput('url', JSON.stringify(['a', 'b']))
+  job2:
+    needs: job1
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: ${{fromJSON(needs.job1.outputs.matrix)}}
+        url: ${{fromJSON(needs.job1.outputs.url)}}
+    steps:
+      - run: echo '${{matrix.os}}-${{matrix.url}}'
