@@ -194,6 +194,8 @@ async fn make_sure_url_dir_in_tmp(url: &str) -> Result<impl AsRef<Path>> {
     make_sure_dir_exsit(env::temp_dir().join(url_hash.to_string())).await
 }
 
+// AsRef::<Path>::as_ref("/tmp");
+// async fn make_sure_dir_exsit(path: impl AsRef<Path>) -> Result<impl AsRef<Path>> {
 async fn make_sure_dir_exsit<P: AsRef<Path>>(path: P) -> Result<impl AsRef<Path>> {
     if path.as_ref().exists() {
         return Ok(path);
