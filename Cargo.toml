@@ -22,6 +22,18 @@ futures = "0"
 # env_logger = "0"
 # lazy_static = "1"
 
+[profile.dev]
+opt-level = 0
+debug = true
+split-debuginfo = '...'  # Platform-specific.
+debug-assertions = true
+overflow-checks = true
+lto = false
+panic = 'unwind'
+incremental = true
+codegen-units = 256
+rpath = false
+
 [profile.release]
 opt-level = "s"
 lto = true

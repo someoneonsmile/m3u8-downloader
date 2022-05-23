@@ -141,7 +141,13 @@ where
         return Ok(());
     }
 
-    let part_path = format!("{:?}{}", dest.as_ref().as_os_str(), ".part");
+    let part_path = format!(
+        "{}{}",
+        dest.as_ref()
+            .to_str()
+            .ok_or_else(|| anyhow::format_err!("dest({:?}) to_str error", dest.as_ref()))?,
+        ".part"
+    );
     let mut part = fs::File::create(&part_path).await?;
     let mut downloaded: u64 = 0;
 
@@ -191,7 +197,12 @@ async fn make_sure_url_dir_in_tmp(url: &str) -> Result<impl AsRef<Path>> {
     let url_hash = hasher.finish();
 
     // create tmp_dir
-    make_sure_dir_exsit(env::temp_dir().join(url_hash.to_string())).await
+    make_sure_dir_exsit(env::temp_dir().join(format!(
+        "{}{}",
+        "m3u8-downloader-",
+        url_hash.to_string()
+    )))
+    .await
 }
 
 // AsRef::<Path>::as_ref("/tmp");
