@@ -109,6 +109,9 @@ async fn main() -> Result<()> {
     // 合并视频
     merge_video(tmp_dir.as_ref(), opt.dest).await?;
 
+    // 删除临时文件
+    fs::remove_dir_all(tmp_dir).await?;
+
     // 打印用时统计
     println!(
         "take: {}",
