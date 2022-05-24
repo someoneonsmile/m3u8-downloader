@@ -127,6 +127,10 @@ async fn download_file<P>(
 where
     P: AsRef<Path>,
 {
+    if dest.as_ref().exists() {
+        pb.finish_and_clear();
+        return Ok(());
+    }
     // https://gist.github.com/giuliano-oliveira/4d11d6b3bb003dba3a1b53f43d81b30d
     let response = client.get(url).send().await?;
 
@@ -136,10 +140,6 @@ where
 
     // 进度条长度
     pb.set_length(total_size);
-
-    if dest.as_ref().exists() {
-        return Ok(());
-    }
 
     let part_path = format!(
         "{}{}",
