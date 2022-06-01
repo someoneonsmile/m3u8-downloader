@@ -200,12 +200,7 @@ async fn make_sure_url_dir_in_tmp(url: &str) -> Result<impl AsRef<Path>> {
     let url_hash = hasher.finish();
 
     // create tmp_dir
-    make_sure_dir_exsit(env::temp_dir().join(format!(
-        "{}{}",
-        "m3u8-downloader-",
-        url_hash.to_string()
-    )))
-    .await
+    make_sure_dir_exsit(env::temp_dir().join(format!("{}{}", "m3u8-downloader-", url_hash))).await
 }
 
 // AsRef::<Path>::as_ref("/tmp");
