@@ -89,7 +89,41 @@ async fn main() -> Result<()> {
     // TODO: 是否可以生成多个 tokio 任务, 在多个线程同时执行
     // 并发下载 ts_list
     let mut emoji_iter = PREFIX_EMOJIS.iter().cycle();
-    let buffered = futures::stream::iter(ts_list)
+
+    // ----------------------------------------------------------------------
+    //    - 并发下载, 方式一 (for_each_concurrent) -
+    // ----------------------------------------------------------------------
+
+    // futures::stream::iter(ts_list)
+    //     .map(Ok)
+    //     .try_for_each_concurrent(opt.worker, |ts| {
+    //         let client = client.clone();
+    //         let ts_url = format!("{}/{}", base_url, ts);
+    //         let ts_file_path = tmp_dir.as_ref().join(ts);
+    //         let pb = main_bar.add(ProgressBar::new(0));
+    //         pb.set_style(pb_style.clone());
+    //         pb.set_prefix(format!(
+    //             "{} [downloading {}]",
+    //             emoji_iter.next().unwrap(),
+    //             ts
+    //         ));
+    //         async move {
+    //             tokio::spawn(async move { download_file(client, &ts_url, ts_file_path, pb).await })
+    //                 .await??;
+    //             Ok(()) as Result<()>
+    //         }
+    //     })
+    //     .await?;
+
+    // ----------------------------------------------------------------------
+    //    - 并发下载, 方式二 (普通 iter collect to FutureUnordered) -
+    // ----------------------------------------------------------------------
+
+    // ----------------------------------------------------------------------
+    //    - 并发下载, 方式三 (map to future then buffer_unordered) -
+    // ----------------------------------------------------------------------
+
+    futures::stream::iter(ts_list)
         .map(|ts| {
             let client = client.clone();
             let ts_url = format!("{}/{}", base_url, ts);
@@ -101,10 +135,15 @@ async fn main() -> Result<()> {
                 emoji_iter.next().unwrap(),
                 ts
             ));
-            async move { download_file(client, &ts_url, ts_file_path, pb).await }
+            async move {
+                tokio::spawn(async move { download_file(client, &ts_url, ts_file_path, pb).await })
+                    .await??;
+                Ok(()) as Result<()>
+            }
         })
-        .buffer_unordered(opt.worker);
-    buffered.try_collect::<Vec<()>>().await?;
+        .buffer_unordered(opt.worker)
+        .try_collect()
+        .await?;
 
     // 合并视频
     merge_video(tmp_dir.as_ref(), opt.dest).await?;
