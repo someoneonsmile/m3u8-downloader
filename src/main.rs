@@ -89,6 +89,7 @@ async fn main() -> Result<()> {
     // TODO: 是否可以生成多个 tokio 任务, 在多个线程同时执行
     // 并发下载 ts_list
     let mut emoji_iter = PREFIX_EMOJIS.iter().cycle();
+    let total = ts_list.len();
 
     // ----------------------------------------------------------------------
     //    - 并发下载, 方式一 (for_each_concurrent) -
@@ -124,15 +125,18 @@ async fn main() -> Result<()> {
     // ----------------------------------------------------------------------
 
     futures::stream::iter(ts_list)
-        .map(|ts| {
+        .enumerate()
+        .map(|(index, ts)| {
             let client = client.clone();
             let ts_url = format!("{}/{}", base_url, ts);
             let ts_file_path = tmp_dir.as_ref().join(ts);
             let pb = main_bar.add(ProgressBar::new(0));
             pb.set_style(pb_style.clone());
             pb.set_prefix(format!(
-                "{} [downloading {}]",
+                "{} [{}/{}] [{}]",
                 emoji_iter.next().unwrap(),
+                index,
+                total,
                 ts
             ));
             async move {
