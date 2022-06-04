@@ -1,5 +1,6 @@
 use clap::Parser;
 use console::Emoji;
+use directories::ProjectDirs;
 use futures::stream::{StreamExt, TryStreamExt};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use std::collections::hash_map::DefaultHasher;
@@ -57,7 +58,7 @@ async fn main() -> Result<()> {
 
     // TODO: use builder
     // 生成临时下载目录
-    let tmp_dir = make_sure_url_dir_in_tmp(url).await?;
+    let tmp_dir = make_sure_url_dir(url).await?;
 
     // 下载文件清单文件
     let ts_list_abs_path = tmp_dir.as_ref().join(TS_LIST_PATH);
@@ -236,14 +237,20 @@ where
     Ok(())
 }
 
-async fn make_sure_url_dir_in_tmp(url: &str) -> Result<impl AsRef<Path>> {
+async fn make_sure_url_dir(url: &str) -> Result<impl AsRef<Path>> {
     // url hash
     let mut hasher = DefaultHasher::new();
     url.hash(&mut hasher);
     let url_hash = hasher.finish();
 
-    // create tmp_dir
-    make_sure_dir_exsit(env::temp_dir().join(format!("{}{}", "m3u8-downloader-", url_hash))).await
+    // create cache_dir
+    make_sure_dir_exsit(
+        ProjectDirs::from("", "", "m3u8-downloader")
+            .ok_or_else(|| anyhow::anyhow!("not find ProjectDirs"))?
+            .cache_dir()
+            .join(url_hash.to_string()),
+    )
+    .await
 }
 
 // AsRef::<Path>::as_ref("/tmp");

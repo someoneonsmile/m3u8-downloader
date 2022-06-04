@@ -15,6 +15,7 @@ anyhow = "1"
 indicatif = {git = "https://github.com/console-rs/indicatif", features = ["improved_unicode"]}
 console = "0"
 futures = "0"
+directories = "4"
 
 # tempfile = "3"
 # rand = "0"
