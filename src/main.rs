@@ -4,7 +4,6 @@ use directories::ProjectDirs;
 use futures::stream::{StreamExt, TryStreamExt};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use std::collections::hash_map::DefaultHasher;
-use std::env;
 use std::hash::{Hash, Hasher};
 use std::path::Path;
 use std::time::Instant;
@@ -244,13 +243,12 @@ async fn make_sure_url_dir(url: &str) -> Result<impl AsRef<Path>> {
     let url_hash = hasher.finish();
 
     // create cache_dir
-    make_sure_dir_exsit(
-        ProjectDirs::from("", "", "m3u8-downloader")
-            .ok_or_else(|| anyhow::anyhow!("not find ProjectDirs"))?
-            .cache_dir()
-            .join(url_hash.to_string()),
-    )
-    .await
+    let url_dir = ProjectDirs::from("", "", "m3u8-downloader")
+        .ok_or_else(|| anyhow::anyhow!("not find ProjectDirs"))?
+        .cache_dir()
+        .join(url_hash.to_string());
+    println!("use cache dir: {}", url_dir.to_string_lossy());
+    make_sure_dir_exsit(url_dir).await
 }
 
 // AsRef::<Path>::as_ref("/tmp");
@@ -259,6 +257,6 @@ async fn make_sure_dir_exsit<P: AsRef<Path>>(path: P) -> Result<impl AsRef<Path>
     if path.as_ref().exists() {
         return Ok(path);
     }
-    fs::create_dir(path.as_ref()).await?;
+    fs::create_dir_all(path.as_ref()).await?;
     Ok(path)
 }
