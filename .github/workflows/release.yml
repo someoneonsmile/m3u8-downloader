@@ -32,11 +32,12 @@ jobs:
       upload_url: ${{ steps.release.outputs.upload_url }}
     steps:
       - if: github.event_name == 'workflow_dispatch'
-        run: echo "release_version=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
+        run: echo "release_version=${{ inputs.tag_name }}" >> $GITHUB_ENV
       - if: github.event_name == 'schedule'
         run: echo "release_version=nightly" >> $GITHUB_ENV
       - if: github.event_name == 'push'
-        run: echo "release_version=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run:
+          echo "release_version=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           # echo "::set-output name=release_version::${{ env.release_version }}"
       - id: release
         uses: actions/github-script@v6
@@ -120,43 +121,43 @@ jobs:
       matrix:
         # build: [linux, linux-arm, macos, win-msvc, win-gnu, win32-msvc]
         build: [
-          {
-            plat: linux,
-            os: ubuntu-latest,
-            rust: stable,
-            target: x86_64-unknown-linux-musl
-          },
-          {
-            plat: macos,
-            os: macos-latest,
-            rust: stable,
-            target: x86_64-apple-darwin
-          },
-          # {
-          #   plat: linux-arm,
-          #   os: ubuntu-latest,
-          #   rust: stable,
-          #   target: arm-unknown-linux-gnueabihf
-          # },
-          {
-            plat: win-msvc,
-            os: windows-latest,
-            rust: stable,
-            target: x86_64-pc-windows-msvc
-          },
-          # {
-          #   plat: win-gnu,
-          #   os: windows-latest,
-          #   rust: stable-x86_64-gnu,
-          #   target: x86_64-pc-windows-gnu
-          # },
-          # {
-          #   plat: win32-msvc,
-          #   os: windows-latest,
-          #   rust: stable,
-          #   target: i686-pc-windows-msvc
-          # },
-        ]
+            {
+              plat: linux,
+              os: ubuntu-latest,
+              rust: stable,
+              target: x86_64-unknown-linux-musl,
+            },
+            {
+              plat: macos,
+              os: macos-latest,
+              rust: stable,
+              target: x86_64-apple-darwin,
+            },
+            # {
+            #   plat: linux-arm,
+            #   os: ubuntu-latest,
+            #   rust: stable,
+            #   target: arm-unknown-linux-gnueabihf
+            # },
+            {
+              plat: win-msvc,
+              os: windows-latest,
+              rust: stable,
+              target: x86_64-pc-windows-msvc,
+            },
+            # {
+            #   plat: win-gnu,
+            #   os: windows-latest,
+            #   rust: stable-x86_64-gnu,
+            #   target: x86_64-pc-windows-gnu
+            # },
+            # {
+            #   plat: win32-msvc,
+            #   os: windows-latest,
+            #   rust: stable,
+            #   target: i686-pc-windows-msvc
+            # },
+          ]
         upload_url: ${{ fromJSON(needs.create-release.outputs.upload_url) }}
     steps:
       - uses: actions/checkout@v3
