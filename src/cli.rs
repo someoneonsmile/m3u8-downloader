@@ -12,7 +12,7 @@ pub struct Opt {
     /// dest path
     #[clap(short, long)]
     pub dest: PathBuf,
-    /// dest path
+    /// parallel worker num
     #[clap(short, long, default_value = "20")]
     pub worker: usize,
 }
