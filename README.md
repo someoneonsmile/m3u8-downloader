@@ -2,6 +2,10 @@
 
 简单实现的 m3u8 下载器
 
+## Screenshot
+
+![preview.png](https://github.com/someoneonsmile/m3u8-downloader/blob/main/img/preview.png?raw=true)
+
 ## Usage
 
 ```
