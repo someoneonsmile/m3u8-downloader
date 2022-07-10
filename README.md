@@ -1,6 +1,6 @@
 # m3u8-downloader
 
-简单实现的 m3u8 下载器
+cli m3u8-downloader
 
 ## Screenshot
 
@@ -22,4 +22,4 @@ OPTIONS:
 
 ## Features
 
-- [x] 断点续传
+- [x] resume from a breakpoint
