@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 tokio = {version = "1", features = ["full"]}
-reqwest = {version = "0", features = ["stream", "trust-dns", "rustls-tls", "rustls-tls-native-roots"]}
+reqwest = {version = "0", default-features = false, features = ["charset", "macos-system-configuration", "http2", "stream", "trust-dns", "rustls-tls", "rustls-tls-native-roots"]}
 clap = {version = "4", features = ["derive"]}
 anyhow = "1"
 

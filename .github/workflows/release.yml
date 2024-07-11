@@ -160,17 +160,16 @@ jobs:
           ]
         upload_url: ${{ fromJSON(needs.create-release.outputs.upload_url) }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
-      - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          override: true
-          profile: minimal
           toolchain: ${{ matrix.build.rust }}
+          targets: ${{ matrix.build.target }}
+      - uses: Swatinem/rust-cache@v2
       - name: build release binary
-        uses: actions-rs/cargo@v1.0.1
+        uses: actions-rs/cargo@v1
         with:
           command: build
           args: --release --target=${{ matrix.build.target }}
@@ -206,7 +205,7 @@ jobs:
             echo "ASSET_SHA256SUM=$staging.tar.gz.sha256sum" >> $GITHUB_ENV
           fi
       - name: Upload release archive
-        uses: actions/upload-release-asset@v1.0.1
+        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -216,7 +215,7 @@ jobs:
           asset_content_type: application/octet-stream
       - name: Upload release archive sha256sum
         if: env.ASSET_SHA256SUM != null
-        uses: actions/upload-release-asset@v1.0.1
+        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
