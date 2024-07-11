@@ -4,6 +4,7 @@ use directories::ProjectDirs;
 use futures::stream::{StreamExt, TryStreamExt};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use std::collections::hash_map::DefaultHasher;
+use std::fmt::Write;
 use std::hash::{Hash, Hasher};
 use std::path::Path;
 use std::time::Instant;
@@ -48,7 +49,7 @@ async fn main() -> Result<()> {
 
     // reqwest client
     // DNS resolve with trust_dns
-    let client = reqwest::ClientBuilder::new().trust_dns(true).build()?;
+    let client = reqwest::ClientBuilder::new().use_rustls_tls().build()?;
 
     let url = opt.url.as_str();
     let base_url = url
@@ -67,10 +68,10 @@ async fn main() -> Result<()> {
         .lines()
         .filter(|line| !line.is_empty() && !line.trim_start().starts_with('#'))
         .collect();
-    let ts_list_file_content = ts_list
-        .iter()
-        .map(|line| format!("file {}\n", line))
-        .collect::<String>();
+    let ts_list_file_content = ts_list.iter().fold(String::new(), |mut buf, line| {
+        let _ = writeln!(buf, "file {}", line);
+        buf
+    });
 
     let mut tmp_list_file = fs::File::create(ts_list_abs_path).await?;
     tmp_list_file
