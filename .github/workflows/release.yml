@@ -101,7 +101,7 @@ jobs:
               tag_name: release_label,
               name: `Release ${ release_label }`,
               prerelease: is_nightly,
-              draft: false,
+              draft: true,
             }
             if (target_commitish) {
               opts.target_commitish = target_commitish
