@@ -1,19 +1,14 @@
-name: release
+name: nightly
 
 on:
   # schedule:
-  # - cron: "5 5 * * *"
-
+  #   - cron: "5 5 * * *"
   workflow_dispatch:
-  #   inputs:
-  #     tag_name:
-  #       description: "Tag name for release"
-  #       required: false
-  #       default: nightly
-  push:
-    tags:
-      - "v*.*.*"
-      - "*.*.*"
+    # inputs:
+    #   tag_name:
+    #     description: "Tag name for release"
+    #     required: false
+    #     default: nightly
 
 env:
   CARGO_TERM_COLOR: always
@@ -131,14 +126,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: delete exist release
-        run: gh release delete stable --cleanup-tag
+        run: gh release delete nightly --cleanup-tag
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
         # uses: actions/github-script@v7
         # with:
         #   script: |
-        #     let tagName = "stable"
+        #     let tagName = "nightly"
         #     try {
         #       const { data: { id:release_id } } = await github.rest.repos.getReleaseByTag({
         #         owner: context.repo.owner,
@@ -164,7 +159,7 @@ jobs:
       - name: download assets
         uses: actions/download-artifact@v4
         with:
-          path: artifact
+          path: artifacts
           merge-multiple: true
 
       - name: "build Changelog"
@@ -174,33 +169,17 @@ jobs:
           token: "${{ github.token }}"
           # mode: "COMMIT"
 
-      - name: create tag release
+      - name: create nightly release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           append_body: true
           body: ${{steps.build_changelog.outputs.changelog}}
-          tag_name: "${{ github.ref_name }}"
-          name: "Release ${{ github.ref_name }}"
+          tag_name: "nightly"
+          name: "Release nightly"
           target_commitish: "${{ github.sha }}"
-          prerelease: false
+          prerelease: true
           draft: false
-          fail_on_unmatched_files: false
-          files: |
-            artifacts/*
-
-      - name: create stable release
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-          append_body: true
-          body: ${{steps.build_changelog.outputs.changelog}}
-          tag_name: "stable"
-          name: "Release stable"
-          target_commitish: "${{ github.sha }}"
-          prerelease: false
-          draft: false
-          make_latest: false
           fail_on_unmatched_files: false
           files: |
             artifacts/*
