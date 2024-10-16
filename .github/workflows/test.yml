@@ -11,7 +11,7 @@ jobs:
       - id: set-matrix
         run: echo "::set-output name=matrix::[\"include\", \"project\"]"
       - id: set-url
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             core.setOutput('url', JSON.stringify(['a', 'b']))
