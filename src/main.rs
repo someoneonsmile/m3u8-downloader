@@ -96,38 +96,10 @@ async fn main() -> Result<()> {
     //    - 并发下载, 方式一 (for_each_concurrent) -
     // ----------------------------------------------------------------------
 
-    // futures::stream::iter(ts_list)
-    //     .map(Ok)
-    //     .try_for_each_concurrent(opt.worker, |ts| {
-    //         let client = client.clone();
-    //         let ts_url = format!("{}/{}", base_url, ts);
-    //         let ts_file_path = tmp_dir.as_ref().join(ts);
-    //         let pb = main_bar.add(ProgressBar::new(0));
-    //         pb.set_style(pb_style.clone());
-    //         pb.set_prefix(format!(
-    //             "{} [downloading {}]",
-    //             emoji_iter.next().unwrap(),
-    //             ts
-    //         ));
-    //         async move {
-    //             tokio::spawn(async move { download_file(client, &ts_url, ts_file_path, pb).await })
-    //                 .await??;
-    //             Ok(()) as Result<()>
-    //         }
-    //     })
-    //     .await?;
-
-    // ----------------------------------------------------------------------
-    //    - 并发下载, 方式二 (普通 iter collect to FutureUnordered) -
-    // ----------------------------------------------------------------------
-
-    // ----------------------------------------------------------------------
-    //    - 并发下载, 方式三 (map to future then buffer_unordered) -
-    // ----------------------------------------------------------------------
-
     futures::stream::iter(ts_list)
         .enumerate()
-        .map(|(index, ts)| {
+        .map(Ok)
+        .try_for_each_concurrent(opt.worker, |(index, ts)| {
             let client = client.clone();
             let ts_url = format!("{}/{}", base_url, ts);
             let ts_file_path = tmp_dir.as_ref().join(ts);
@@ -141,14 +113,43 @@ async fn main() -> Result<()> {
                 ts
             ));
             async move {
-                tokio::spawn(async move { download_file(client, &ts_url, ts_file_path, pb).await })
-                    .await??;
+                download_file(client, &ts_url, ts_file_path, pb).await?;
                 Ok(()) as Result<()>
             }
         })
-        .buffer_unordered(opt.worker)
-        .try_collect()
         .await?;
+
+    // ----------------------------------------------------------------------
+    //    - 并发下载, 方式二 (普通 iter collect to FutureUnordered) -
+    // ----------------------------------------------------------------------
+
+    // ----------------------------------------------------------------------
+    //    - 并发下载, 方式三 (map to future then buffer_unordered) -
+    // ----------------------------------------------------------------------
+
+    // futures::stream::iter(ts_list)
+    //     .enumerate()
+    //     .map(|(index, ts)| {
+    //         let client = client.clone();
+    //         let ts_url = format!("{}/{}", base_url, ts);
+    //         let ts_file_path = tmp_dir.as_ref().join(ts);
+    //         let pb = main_bar.add(ProgressBar::new(0));
+    //         pb.set_style(pb_style.clone());
+    //         pb.set_prefix(format!(
+    //             "{} [{}/{}] [{}]",
+    //             emoji_iter.next().unwrap(),
+    //             index,
+    //             total,
+    //             ts
+    //         ));
+    //         async move {
+    //             download_file(client, &ts_url, ts_file_path, pb).await?;
+    //             Ok(()) as Result<()>
+    //         }
+    //     })
+    //     .buffer_unordered(opt.worker)
+    //     .try_collect::<Vec<()>>()
+    //     .await?;
 
     // 合并视频
     merge_video(tmp_dir.as_ref(), opt.dest).await?;
