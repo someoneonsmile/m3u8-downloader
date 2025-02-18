@@ -23,3 +23,16 @@ OPTIONS:
 ## Features
 
 - [x] resume from a breakpoint
+
+## TODO
+
+- [ ] url parse
+- [ ] http/socks proxy
+- [ ] cookie
+- [ ] url capture
+- [ ] m3u8 parse
+  - [ ] master playlist
+  - [ ] variants choice
+- [ ] base64 decode
+- [ ] aes decrypted
+- [ ] hls - dash
