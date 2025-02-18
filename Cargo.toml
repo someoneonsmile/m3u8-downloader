@@ -2,10 +2,18 @@
 name = "m3u8-downloader"
 version = "0.3.4"
 edition = "2021"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+console = "0"
+directories = "6"
+futures = "0"
+
+# crate.io indicatif has bug
+# indicatif = {git = "https://github.com/console-rs/indicatif", features = ["improved_unicode", "tokio"]}
+indicatif = { version = "0", features = ["improved_unicode", "tokio"] }
 reqwest = { version = "0", default-features = false, features = [
   "charset",
   "macos-system-configuration",
@@ -16,16 +24,6 @@ reqwest = { version = "0", default-features = false, features = [
   "rustls-tls-native-roots",
 ] }
 tokio = { version = "1", features = ["full"] }
-clap = { version = "4", features = ["derive"] }
-anyhow = "1"
-
-# crate.io indicatif has bug
-# indicatif = {git = "https://github.com/console-rs/indicatif", features = ["improved_unicode", "tokio"]}
-indicatif = { version = "0", features = ["improved_unicode", "tokio"] }
-console = "0"
-futures = "0"
-directories = "6"
-
 # tempfile = "3"
 # rand = "0"
 # log = {version = "0"}
