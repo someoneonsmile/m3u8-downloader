@@ -3,9 +3,7 @@ use console::Emoji;
 use directories::ProjectDirs;
 use futures::stream::{StreamExt, TryStreamExt};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
-use std::collections::hash_map::DefaultHasher;
 use std::fmt::Write;
-use std::hash::{Hash, Hasher};
 use std::path::Path;
 use std::time::Instant;
 use tokio::fs;
@@ -13,6 +11,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
 mod cli;
+mod util;
 
 type Result<Output> = anyhow::Result<Output>;
 
@@ -240,9 +239,7 @@ where
 
 async fn make_sure_url_dir(url: &str) -> Result<impl AsRef<Path>> {
     // url hash
-    let mut hasher = DefaultHasher::new();
-    url.hash(&mut hasher);
-    let url_hash = hasher.finish();
+    let url_hash = util::hash(&url);
 
     // create cache_dir
     let url_dir = ProjectDirs::from("", "", "m3u8-downloader")
