@@ -1,5 +1,3 @@
-use clap::Parser;
-use console::Emoji;
 use directories::ProjectDirs;
 use futures::stream::{StreamExt, TryStreamExt};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
@@ -10,23 +8,13 @@ use tokio::fs;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
+use crate::constants::*;
+
 mod cli;
+mod constants;
 mod util;
 
 type Result<Output> = anyhow::Result<Output>;
-
-/// prefix emoji
-static PREFIX_EMOJIS: [Emoji<'_, '_>; 4] = [
-    Emoji("🛸", ""),
-    Emoji("🚀", ""),
-    Emoji("🛴", ""),
-    Emoji("🛹", ""),
-];
-
-/// 最大同时下载数
-static MAX_PARALLEL_DOWNLOAD: usize = 50;
-
-static TS_LIST_PATH: &str = "ts_list.txt";
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -42,27 +30,25 @@ async fn main() -> Result<()> {
     //     .format_timestamp(None)
     //     .init();
 
-    let mut opt = cli::Opt::parse();
-    opt.worker = std::cmp::min(opt.worker, MAX_PARALLEL_DOWNLOAD);
-    let opt = opt;
+    let opt = cli::Opt::get();
 
     // reqwest client
     // DNS resolve with trust_dns
     let client = reqwest::ClientBuilder::new().use_rustls_tls().build()?;
 
-    let url = opt.url.as_str();
-    let base_url = url
-        .split_at(url.rfind('/').expect("please input the m3u8 url"))
+    let m3u8_url = opt.url.as_str();
+    let base_url = m3u8_url
+        .split_at(m3u8_url.rfind('/').expect("please input the m3u8 url"))
         .0;
 
     // TODO: use builder
     // 生成临时下载目录
-    let tmp_dir = make_sure_url_dir(url).await?;
+    let tmp_dir = make_sure_url_dir(m3u8_url).await?;
 
     // 下载文件清单文件
     let ts_list_abs_path = tmp_dir.as_ref().join(TS_LIST_PATH);
 
-    let ts_list_cotent_origin = client.get(url).send().await?.text().await?;
+    let ts_list_cotent_origin = client.get(m3u8_url).send().await?.text().await?;
     let ts_list: Vec<&str> = ts_list_cotent_origin
         .lines()
         .filter(|line| !line.is_empty() && !line.trim_start().starts_with('#'))
