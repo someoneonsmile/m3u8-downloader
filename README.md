@@ -26,14 +26,14 @@ OPTIONS:
 
 ## TODO
 
-- [ ] url parse
+- [x] url parse
 - [x] http/socks proxy
 - [x] gzip / brotli / zstd support
 - [ ] cookie
 - [ ] url capture
-- [ ] m3u8 parse
-  - [ ] master playlist
-  - [ ] variants choice
+- [x] m3u8 parse
+  - [x] master playlist
+  - [x] variants choice
 - [ ] base64 decode
 - [ ] aes decrypted
 - [ ] hls - dash
