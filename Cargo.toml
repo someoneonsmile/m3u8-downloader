@@ -1,6 +1,6 @@
 [package]
 name = "m3u8-downloader"
-version = "0.3.4"
+version = "0.4.0"
 edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -9,12 +9,14 @@ anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 console = "0"
 const_format = { version = "0" }
+dialoguer = "0"
 directories = "6"
 futures = "0"
 
 # crate.io indicatif has bug
 # indicatif = {git = "https://github.com/console-rs/indicatif", features = ["improved_unicode", "tokio"]}
 indicatif = { version = "0", features = ["improved_unicode", "tokio"] }
+m3u8-rs = "6"
 reqwest = { version = "0", default-features = false, features = [
   "charset",
   "macos-system-configuration",
@@ -26,6 +28,7 @@ reqwest = { version = "0", default-features = false, features = [
 ] }
 tokio = { version = "1", features = ["full"] }
 url = "2"
+
 # tempfile = "3"
 # rand = "0"
 # log = {version = "0"}

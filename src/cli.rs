@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::constants::*;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -14,4 +15,12 @@ pub struct Opt {
     /// parallel worker num
     #[clap(short, long, default_value = "20")]
     pub worker: usize,
+}
+
+impl Opt {
+    pub(crate) fn get() -> Opt {
+        let mut opt = Opt::parse();
+        opt.worker = std::cmp::min(opt.worker, MAX_PARALLEL_DOWNLOAD);
+        opt
+    }
 }
