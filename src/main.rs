@@ -1,17 +1,22 @@
+use anyhow::anyhow;
 use directories::ProjectDirs;
 use futures::stream::{StreamExt, TryStreamExt};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
+use reqwest::IntoUrl;
 use std::fmt::Write;
 use std::path::Path;
 use std::time::Instant;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
+use url::Url;
 
 use crate::constants::*;
 
 mod cli;
 mod constants;
+mod m3u8;
+mod request;
 mod util;
 
 type Result<Output> = anyhow::Result<Output>;
@@ -32,27 +37,41 @@ async fn main() -> Result<()> {
 
     let opt = cli::Opt::get();
 
-    // reqwest client
-    // DNS resolve with trust_dns
-    let client = reqwest::ClientBuilder::new().use_rustls_tls().build()?;
-
-    let m3u8_url = opt.url.as_str();
-    let base_url = m3u8_url
-        .split_at(m3u8_url.rfind('/').expect("please input the m3u8 url"))
-        .0;
+    let m3u8_url: Url = Url::parse(&opt.url)?;
+    let base_url = &m3u8_url;
 
     // TODO: use builder
     // 生成临时下载目录
-    let tmp_dir = make_sure_url_dir(m3u8_url).await?;
+    let tmp_dir = make_sure_url_dir(m3u8_url.as_str()).await?;
 
     // 下载文件清单文件
     let ts_list_abs_path = tmp_dir.as_ref().join(TS_LIST_PATH);
 
-    let ts_list_cotent_origin = client.get(m3u8_url).send().await?.text().await?;
-    let ts_list: Vec<&str> = ts_list_cotent_origin
-        .lines()
-        .filter(|line| !line.is_empty() && !line.trim_start().starts_with('#'))
-        .collect();
+    let ts_list_cotent_origin = request::get_bytes(m3u8_url.clone()).await?;
+    let media_playlist = m3u8::parse(base_url, &ts_list_cotent_origin).await?;
+    let segements_uri_list: Vec<Url> = media_playlist
+        .segments
+        .iter()
+        .map(|s| {
+            let uri = &s.uri;
+            if let Ok(uri) = Url::parse(uri) {
+                anyhow::Ok(uri)
+            } else {
+                let uri = base_url.join(uri)?;
+                anyhow::Ok(uri)
+            }
+        })
+        .collect::<Result<Vec<Url>>>()?;
+    let ts_list: Vec<&str> = segements_uri_list
+        .iter()
+        .map(|uri| {
+            let last_path = uri
+                .path_segments()
+                .and_then(|ss| ss.last())
+                .ok_or_else(|| anyhow!("can't get segments uri, {uri:?}"))?;
+            anyhow::Ok(last_path)
+        })
+        .collect::<Result<Vec<&str>>>()?;
     let ts_list_file_content = ts_list.iter().fold(String::new(), |mut buf, line| {
         let _ = writeln!(buf, "file {}", line);
         buf
@@ -81,13 +100,11 @@ async fn main() -> Result<()> {
     //    - 并发下载, 方式一 (for_each_concurrent) -
     // ----------------------------------------------------------------------
 
-    futures::stream::iter(ts_list)
+    futures::stream::iter(segements_uri_list.iter().zip(ts_list.iter()))
         .enumerate()
         .map(Ok)
-        .try_for_each_concurrent(opt.worker, |(index, ts)| {
-            let client = client.clone();
-            let ts_url = format!("{}/{}", base_url, ts);
-            let ts_file_path = tmp_dir.as_ref().join(ts);
+        .try_for_each_concurrent(opt.worker, |(index, (ts_url, ts_name))| {
+            let ts_file_path = tmp_dir.as_ref().join(ts_name);
             let pb = main_bar.add(ProgressBar::new(0));
             pb.set_style(pb_style.clone());
             pb.set_prefix(format!(
@@ -95,10 +112,10 @@ async fn main() -> Result<()> {
                 emoji_iter.next().unwrap(),
                 index,
                 total,
-                ts
+                ts_name
             ));
             async move {
-                download_file(client, &ts_url, ts_file_path, pb).await?;
+                download_file(ts_url.to_owned(), ts_file_path, pb).await?;
                 Ok(()) as Result<()>
             }
         })
@@ -151,13 +168,9 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn download_file<P>(
-    client: reqwest::Client,
-    url: &str,
-    dest: P,
-    pb: ProgressBar,
-) -> Result<()>
+async fn download_file<U, P>(url: U, dest: P, pb: ProgressBar) -> Result<()>
 where
+    U: IntoUrl,
     P: AsRef<Path>,
 {
     if dest.as_ref().exists() {
@@ -165,7 +178,7 @@ where
         return Ok(());
     }
     // https://gist.github.com/giuliano-oliveira/4d11d6b3bb003dba3a1b53f43d81b30d
-    let response = client.get(url).send().await?;
+    let response = request::get(url).await?;
 
     let total_size = response
         .content_length()

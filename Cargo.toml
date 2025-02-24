@@ -9,6 +9,7 @@ anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 console = "0"
 const_format = { version = "0" }
+dialoguer = "0"
 directories = "6"
 futures = "0"
 
