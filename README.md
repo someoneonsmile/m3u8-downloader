@@ -38,6 +38,7 @@ OPTIONS:
 - [ ] aes decrypted
 - [ ] hls - dash
 
-- [ ] github action
+- [x] github action
+- [x] shell completions and man help
 - [ ] edition 2024 - async closure
 - [ ] clippy lint
