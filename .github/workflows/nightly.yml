@@ -1,4 +1,4 @@
-name: nightly
+name: Nightly
 
 on:
   # schedule:
@@ -15,6 +15,7 @@ env:
   USE_CROSS: true
   FETCH_DEPTH: 0
   RELEASE_NAME: "m3u8-downloader"
+  SHELL_HELP_DIR: shell_help
 
 defaults:
   run:
@@ -23,9 +24,9 @@ defaults:
 jobs:
   build:
     runs-on: ${{ matrix.build.os }}
-    continue-on-error: true
+    continue-on-error: false
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         # build: [linux, linux-arm, macos, win-msvc, win-gnu, win32-msvc]
         build: [
@@ -34,12 +35,14 @@ jobs:
               os: ubuntu-latest,
               rust: stable,
               target: x86_64-unknown-linux-musl,
+              cargo: cross,
             },
             {
               plat: macos,
               os: macos-latest,
               rust: stable,
               target: x86_64-apple-darwin,
+              cargo: cross,
             },
             # {
             #   plat: linux-arm,
@@ -47,12 +50,12 @@ jobs:
             #   rust: stable,
             #   target: arm-unknown-linux-gnueabihf
             # },
-            {
-              plat: win-msvc,
-              os: windows-latest,
-              rust: stable,
-              target: x86_64-pc-windows-msvc,
-            },
+            # {
+            #   plat: win-msvc,
+            #   os: windows-latest,
+            #   rust: stable,
+            #   target: x86_64-pc-windows-msvc
+            # },
             # {
             #   plat: win-gnu,
             #   os: windows-latest,
@@ -75,14 +78,25 @@ jobs:
           toolchain: ${{ matrix.build.rust }}
           targets: ${{ matrix.build.target }}
 
+      - name: Install cross
+        if: matrix.build.cargo == 'cross'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+
+      # - name: Overwrite build command env variable
+      #   if: matrix.build.cargo == 'cross'
+      #   run: echo "BUILD_CMD=cross" >> $GITHUB_ENV
+
+      - name: Show build cmd version
+        run: ${{ matrix.build.cargo }} --version
+
       - uses: Swatinem/rust-cache@v2
 
-      - name: build release binary
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target=${{ matrix.build.target }}
-          use-cross: ${{ env.USE_CROSS }}
+      - name: Build release binary
+        # uses: actions-rs/cargo@v1
+        run:
+          ${{ matrix.build.cargo }} build --release --target=${{ matrix.build.target }}
 
       - name: Strip release binary (linux and macos)
         if: matrix.build.plat == 'linux' || matrix.build.plat == 'macos'
@@ -103,7 +117,8 @@ jobs:
           staging="${{ env.RELEASE_NAME }}-${{ matrix.build.target }}"
           mkdir -p "$staging"
           mkdir -p "artifacts"
-          cp {README.md,LICENSE} "$staging/"
+          cp {README.md,LICENSE} $staging/
+          cp -r ${SHELL_HELP_DIR}/* $staging/
           if [ "${{ matrix.build.os }}" = "windows-latest" ]; then
             cp "target/${{ matrix.build.target }}/release/${{ env.RELEASE_NAME }}.exe" "$staging/"
             7z a "artifacts/$staging.zip" "$staging"
@@ -125,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: delete exist release
+      - name: Delete exist release
         run: gh release delete nightly --cleanup-tag
         continue-on-error: true
         env:
@@ -156,20 +171,20 @@ jobs:
         #       console.error(e)
         #     }
 
-      - name: download assets
+      - name: Download assets
         uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
 
-      - name: "build Changelog"
+      - name: Build Changelog
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v5
         with:
           token: "${{ github.token }}"
-          # mode: "COMMIT"
+          mode: "COMMIT"
 
-      - name: create nightly release
+      - name: Create nightly release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
