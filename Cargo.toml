@@ -25,6 +25,10 @@ reqwest = { version = "0", default-features = false, features = [
   "trust-dns",
   "rustls-tls",
   "rustls-tls-native-roots",
+  "socks",
+  "gzip",
+  "brotli",
+  "zstd",
 ] }
 tokio = { version = "1", features = ["full"] }
 url = "2"

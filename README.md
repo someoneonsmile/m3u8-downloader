@@ -27,7 +27,8 @@ OPTIONS:
 ## TODO
 
 - [ ] url parse
-- [ ] http/socks proxy
+- [x] http/socks proxy
+- [x] gzip / brotli / zstd support
 - [ ] cookie
 - [ ] url capture
 - [ ] m3u8 parse
