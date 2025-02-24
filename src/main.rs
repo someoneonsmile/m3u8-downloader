@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use clap::Parser;
 use directories::ProjectDirs;
 use futures::stream::{StreamExt, TryStreamExt};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
@@ -35,7 +36,11 @@ async fn main() -> Result<()> {
     //     .format_timestamp(None)
     //     .init();
 
-    let opt = cli::Opt::get();
+    let opt = {
+        let mut opt = cli::Opt::parse();
+        opt.worker = std::cmp::min(opt.worker, MAX_PARALLEL_DOWNLOAD);
+        opt
+    };
 
     let m3u8_url: Url = Url::parse(&opt.url)?;
     let base_url = &m3u8_url;
