@@ -63,3 +63,22 @@ panic = "abort"
 # options["none", "debuginfo", "symbols", true, false]
 # the default is "none", true = "symbols", false = "none"
 strip = true
+
+[lints.clippy]
+pedantic = { level = "deny", priority = -1 }
+exit = "deny"
+expect_used = "deny"
+get_unwrap = "deny"
+index_refutable_slice = "deny"
+indexing_slicing = "deny"
+match_on_vec_items = "deny"
+match_wild_err_arm = "deny"
+missing_panics_doc = "deny"
+panic = "deny"
+string_slice = "deny"
+todo = "deny"
+unchecked_duration_subtraction = "deny"
+unimplemented = "deny"
+unreachable = "allow"
+unwrap_used = "deny"
+too_many_lines = "allow"
