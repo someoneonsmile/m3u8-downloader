@@ -36,3 +36,7 @@ OPTIONS:
 - [ ] base64 decode
 - [ ] aes decrypted
 - [ ] hls - dash
+
+- [ ] github action
+- [ ] edition 2024 - async closure
+- [ ] clippy lint
