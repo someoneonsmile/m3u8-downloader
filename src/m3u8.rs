@@ -3,6 +3,8 @@ use std::sync::Arc;
 
 use anyhow::anyhow;
 use anyhow::Result;
+use base64::prelude::BASE64_STANDARD;
+use base64::Engine;
 use m3u8_rs::MediaPlaylist;
 use m3u8_rs::Playlist;
 use url::Url;
@@ -31,6 +33,13 @@ where
     D: Fn(Url) -> Fut + Send + Sync + 'static,
     Fut: IntoFuture<Output = Result<Vec<u8>>> + 'static,
 {
+    let decoded = BASE64_STANDARD.decode(input);
+    // let input = match decoded {
+    //     Ok(ref decoded_data) => decoded_data.as_slice(),
+    //     Err(_) => input,
+    // };
+    let input = decoded.as_ref().map(Vec::as_slice).unwrap_or(input);
+
     let parsed = m3u8_rs::parse_playlist_res(input).map_err(|e| anyhow!("{:?}", e))?;
     match parsed {
         Playlist::MasterPlaylist(pl) => {
@@ -50,6 +59,8 @@ where
                 .get(i)
                 .ok_or_else(|| anyhow!("select out of range for variants"))?;
             let content = download_fn(uri.clone()).await?;
+            let decoded = BASE64_STANDARD.decode(&content);
+            let content = decoded.unwrap_or(content);
             let pl: MediaPlaylist =
                 m3u8_rs::parse_media_playlist_res(&content).map_err(|e| anyhow!("{:?}", e))?;
             Ok(pl)
