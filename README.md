@@ -34,7 +34,7 @@ OPTIONS:
 - [x] m3u8 parse
   - [x] master playlist
   - [x] variants choice
-- [ ] base64 decode
+- [x] base64 decode
 - [ ] aes decrypted
 - [ ] hls - dash
 
