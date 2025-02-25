@@ -48,7 +48,7 @@ where
             .await??;
             let uri = uris
                 .get(i)
-                .ok_or_else(|| anyhow!("select error for variants"))?;
+                .ok_or_else(|| anyhow!("select out of range for variants"))?;
             let content = download_fn(uri.clone()).await?;
             let pl: MediaPlaylist =
                 m3u8_rs::parse_media_playlist_res(&content).map_err(|e| anyhow!("{:?}", e))?;
