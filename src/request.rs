@@ -4,7 +4,7 @@ use std::sync::LazyLock;
 
 use reqwest::{Client, IntoUrl, Response};
 
-/// DNS resolve with trust_dns
+/// DNS resolve with `trust_dns`
 static HTTP_CLIENT: LazyLock<reqwest::Result<Client>> =
     LazyLock::new(|| reqwest::ClientBuilder::new().use_rustls_tls().build());
 

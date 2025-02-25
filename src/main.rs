@@ -1,5 +1,6 @@
 use anyhow::anyhow;
 use clap::Parser;
+use console::Emoji;
 use directories::ProjectDirs;
 use futures::stream::{StreamExt, TryStreamExt};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
@@ -12,7 +13,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 use url::Url;
 
-use crate::constants::*;
+use crate::constants::{MAX_PARALLEL_DOWNLOAD, PREFIX_EMOJIS, TS_LIST_PATH};
 
 mod cli;
 mod constants;
@@ -72,13 +73,13 @@ async fn main() -> Result<()> {
         .map(|uri| {
             let last_path = uri
                 .path_segments()
-                .and_then(|ss| ss.last())
+                .and_then(Iterator::last)
                 .ok_or_else(|| anyhow!("can't get segments uri, {uri:?}"))?;
             anyhow::Ok(last_path)
         })
         .collect::<Result<Vec<&str>>>()?;
     let ts_list_file_content = ts_list.iter().fold(String::new(), |mut buf, line| {
-        let _ = writeln!(buf, "file {}", line);
+        let _ = writeln!(buf, "file {line}");
         buf
     });
 
@@ -114,7 +115,7 @@ async fn main() -> Result<()> {
             pb.set_style(pb_style.clone());
             pb.set_prefix(format!(
                 "{} [{}/{}] [{}]",
-                emoji_iter.next().unwrap(),
+                emoji_iter.next().unwrap_or(&Emoji("", "")),
                 index,
                 total,
                 ts_name
