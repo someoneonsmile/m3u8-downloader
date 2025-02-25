@@ -10,7 +10,7 @@ use url::Url;
 use crate::request;
 
 pub(crate) async fn parse(base_uri: &Url, input: &[u8]) -> Result<MediaPlaylist> {
-    let c = _parse(
+    let c = inner_parse(
         base_uri,
         input,
         |items| Ok(dialoguer::Select::new().items(items).interact()?),
@@ -20,7 +20,7 @@ pub(crate) async fn parse(base_uri: &Url, input: &[u8]) -> Result<MediaPlaylist>
     Ok(c)
 }
 
-async fn _parse<S, D, Fut>(
+async fn inner_parse<S, D, Fut>(
     base_uri: &Url,
     input: &[u8],
     select_fn: S,
@@ -46,7 +46,9 @@ where
                 move || select_fn(&uris)
             })
             .await??;
-            let uri = &uris[i];
+            let uri = uris
+                .get(i)
+                .ok_or_else(|| anyhow!("select out of range for variants"))?;
             let content = download_fn(uri.clone()).await?;
             let pl: MediaPlaylist =
                 m3u8_rs::parse_media_playlist_res(&content).map_err(|e| anyhow!("{:?}", e))?;
@@ -66,10 +68,10 @@ mod test {
     async fn parse() -> Result<()> {
         let d = fs::read_dir("data")?;
         let base_uri = Url::parse("http://some.com/")?;
-        for f in d.into_iter() {
+        for f in d {
             let f = f?;
             let a: Vec<u8> = fs::read(dbg!(f.path()))?;
-            super::_parse(
+            super::inner_parse(
                 &base_uri,
                 &a,
                 |_items| Ok(0),
