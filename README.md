@@ -20,6 +20,10 @@ OPTIONS:
     -w, --worker <WORKER>    parallel worker num [default: 20]
 ```
 
+## Required
+
+- ffmpeg
+
 ## Features
 
 - [x] resume from a breakpoint
