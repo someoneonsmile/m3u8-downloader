@@ -16,7 +16,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  USE_CROSS: true
   FETCH_DEPTH: 0
   RELEASE_NAME: "m3u8-downloader"
   SHELL_HELP_DIR: shell_help
@@ -34,45 +33,45 @@ jobs:
       matrix:
         # build: [linux, linux-arm, macos, win-msvc, win-gnu, win32-msvc]
         build: [
-            {
-              plat: linux,
-              os: ubuntu-latest,
-              rust: stable,
-              target: x86_64-unknown-linux-musl,
-              cargo: cross,
-            },
-            {
-              plat: macos,
-              os: macos-latest,
-              rust: stable,
-              target: x86_64-apple-darwin,
-              cargo: cross,
-            },
-            # {
-            #   plat: linux-arm,
-            #   os: ubuntu-latest,
-            #   rust: stable,
-            #   target: arm-unknown-linux-gnueabihf
-            # },
-            # {
-            #   plat: win-msvc,
-            #   os: windows-latest,
-            #   rust: stable,
-            #   target: x86_64-pc-windows-msvc
-            # },
-            # {
-            #   plat: win-gnu,
-            #   os: windows-latest,
-            #   rust: stable-x86_64-gnu,
-            #   target: x86_64-pc-windows-gnu
-            # },
-            # {
-            #   plat: win32-msvc,
-            #   os: windows-latest,
-            #   rust: stable,
-            #   target: i686-pc-windows-msvc
-            # },
-          ]
+          {
+            plat: linux,
+            os: ubuntu-latest,
+            rust: stable,
+            target: x86_64-unknown-linux-musl,
+            cargo: cross,
+          },
+          {
+            plat: macos,
+            os: macos-latest,
+            rust: stable,
+            target: x86_64-apple-darwin,
+            cargo: cross,
+          },
+          # {
+          #   plat: linux-arm,
+          #   os: ubuntu-latest,
+          #   rust: stable,
+          #   target: arm-unknown-linux-gnueabihf
+          # },
+          # {
+          #   plat: win-msvc,
+          #   os: windows-latest,
+          #   rust: stable,
+          #   target: x86_64-pc-windows-msvc
+          # },
+          # {
+          #   plat: win-gnu,
+          #   os: windows-latest,
+          #   rust: stable-x86_64-gnu,
+          #   target: x86_64-pc-windows-gnu
+          # },
+          # {
+          #   plat: win32-msvc,
+          #   os: windows-latest,
+          #   rust: stable,
+          #   target: i686-pc-windows-msvc
+          # },
+        ]
 
     steps:
       - uses: actions/checkout@v4
