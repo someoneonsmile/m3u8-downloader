@@ -1,0 +1,2 @@
+[build.env]
+passthrough = ["SHELL_HELP_DIR"]
