@@ -44,5 +44,5 @@ OPTIONS:
 
 - [x] github action
 - [x] shell completions and man help
-- [ ] edition 2024 - async closure
+- [x] edition 2024 - async closure
 - [x] clippy lint
