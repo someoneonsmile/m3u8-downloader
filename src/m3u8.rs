@@ -1,10 +1,9 @@
-use std::future::IntoFuture;
 use std::sync::Arc;
 
-use anyhow::anyhow;
 use anyhow::Result;
-use base64::prelude::BASE64_STANDARD;
+use anyhow::anyhow;
 use base64::Engine;
+use base64::prelude::BASE64_STANDARD;
 use m3u8_rs::MediaPlaylist;
 use m3u8_rs::Playlist;
 use url::Url;
@@ -16,13 +15,13 @@ pub(crate) async fn parse(base_uri: &Url, input: &[u8]) -> Result<MediaPlaylist>
         base_uri,
         input,
         |items| Ok(dialoguer::Select::new().items(items).interact()?),
-        |uri| async move { request::get_bytes(uri).await },
+        async |uri| request::get_bytes(uri.to_owned()).await,
     )
     .await?;
     Ok(c)
 }
 
-async fn inner_parse<S, D, Fut>(
+async fn inner_parse<S, D>(
     base_uri: &Url,
     input: &[u8],
     select_fn: S,
@@ -30,8 +29,7 @@ async fn inner_parse<S, D, Fut>(
 ) -> Result<MediaPlaylist>
 where
     S: Fn(&[Url]) -> Result<usize> + Send + Sync + 'static,
-    D: Fn(Url) -> Fut + Send + Sync + 'static,
-    Fut: IntoFuture<Output = Result<Vec<u8>>> + 'static,
+    D: AsyncFn(&Url) -> Result<Vec<u8>>,
 {
     let decoded = BASE64_STANDARD.decode(input);
     // let input = match decoded {
@@ -58,7 +56,7 @@ where
             let uri = uris
                 .get(i)
                 .ok_or_else(|| anyhow!("select out of range for variants"))?;
-            let content = download_fn(uri.clone()).await?;
+            let content = download_fn(uri).await?;
             let decoded = BASE64_STANDARD.decode(&content);
             let content = decoded.unwrap_or(content);
             let pl: MediaPlaylist =
@@ -86,7 +84,7 @@ mod test {
                 &base_uri,
                 &a,
                 |_items| Ok(0),
-                |_url| async {
+                async |_url| {
                     let content = tokio::fs::read("data/mediaplaylist.m3u8").await?;
                     Ok(content)
                 },
