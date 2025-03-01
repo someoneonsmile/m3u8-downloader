@@ -35,7 +35,7 @@ OPTIONS:
 - [x] gzip / brotli / zstd support
 - [ ] cookie
 - [ ] url capture
-- [ ] m3u8 parse
+- [x] m3u8 parse
   - [x] master playlist
   - [x] variants choice
     - [x] friendly tips
