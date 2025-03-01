@@ -35,9 +35,10 @@ OPTIONS:
 - [x] gzip / brotli / zstd support
 - [ ] cookie
 - [ ] url capture
-- [x] m3u8 parse
+- [ ] m3u8 parse
   - [x] master playlist
   - [x] variants choice
+    - [x] friendly tips
 - [x] base64 decode
 - [ ] aes decrypted
 - [ ] hls - dash

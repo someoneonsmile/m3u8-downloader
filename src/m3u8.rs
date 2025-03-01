@@ -28,7 +28,7 @@ async fn inner_parse<S, D>(
     download_fn: D,
 ) -> Result<MediaPlaylist>
 where
-    S: Fn(&[Url]) -> Result<usize> + Send + Sync + 'static,
+    S: Fn(&[String]) -> Result<usize> + Send + Sync + 'static,
     D: AsyncFn(&Url) -> Result<Vec<u8>>,
 {
     let decoded = BASE64_STANDARD.decode(input);
@@ -41,18 +41,27 @@ where
     let parsed = m3u8_rs::parse_playlist_res(input).map_err(|e| anyhow!("{:?}", e))?;
     match parsed {
         Playlist::MasterPlaylist(pl) => {
-            let uris: Vec<Url> = pl
+            let (uris, texts): (Vec<Url>, Vec<String>) = pl
                 .variants
                 .iter()
                 .filter(|v| !v.is_i_frame)
-                .filter_map(|v| base_uri.join(&v.uri).ok())
+                .filter_map(|v| {
+                    let full_rui = base_uri.join(&v.uri).ok()?;
+                    let wh = v.resolution.map(|it| format!("{}x{}", it.width, it.height));
+                    Some((
+                        full_rui,
+                        format!(
+                            "{}{}",
+                            v.uri,
+                            wh.map(|it| format!(": {it}"))
+                                .and_then(|wh| v.frame_rate.map(|r| format!("{wh}x{r}")))
+                                .unwrap_or_default()
+                        ),
+                    ))
+                })
                 .collect();
             let uris = Arc::new(uris);
-            let i = tokio::task::spawn_blocking({
-                let uris = uris.clone();
-                move || select_fn(&uris)
-            })
-            .await??;
+            let i = tokio::task::spawn_blocking(move || select_fn(&texts)).await??;
             let uri = uris
                 .get(i)
                 .ok_or_else(|| anyhow!("select out of range for variants"))?;
