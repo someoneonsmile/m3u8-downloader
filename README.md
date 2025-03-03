@@ -30,6 +30,7 @@ OPTIONS:
 
 ## TODO
 
+- [ ] read from file
 - [x] url parse
 - [x] http/socks proxy
 - [x] gzip / brotli / zstd support
