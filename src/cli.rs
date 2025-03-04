@@ -20,10 +20,12 @@ pub struct Cli {
 #[derive(Args, Debug)]
 #[group(required = true, multiple = true)]
 pub struct Sources {
-    /// source used for from file
+    /// source mode used for from file
+    /// when `--file` file content segement's uri is not absolute
+    /// should add the `--url` option
     #[arg(short, long)]
     pub source: Option<PathBuf>,
-    /// url to download
+    /// url mode used for from url
     #[arg(long)]
     pub url: Option<String>,
 }
