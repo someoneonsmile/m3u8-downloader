@@ -1,9 +1,9 @@
 use anyhow::anyhow;
-use clap::Parser;
 use console::Emoji;
 use directories::ProjectDirs;
 use futures::stream::{StreamExt, TryStreamExt};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
+use opt::Opt;
 use reqwest::IntoUrl;
 use std::fmt::Write;
 use std::path::Path;
@@ -13,11 +13,12 @@ use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 use url::Url;
 
-use crate::constants::{MAX_PARALLEL_DOWNLOAD, PREFIX_EMOJIS, TS_LIST_PATH};
+use crate::constants::{PREFIX_EMOJIS, TS_LIST_PATH};
 
 mod cli;
 mod constants;
 mod m3u8;
+mod opt;
 mod request;
 mod util;
 
@@ -37,24 +38,19 @@ async fn main() -> Result<()> {
     //     .format_timestamp(None)
     //     .init();
 
-    let opt = {
-        let mut opt = cli::Opt::parse();
-        opt.worker = std::cmp::min(opt.worker, MAX_PARALLEL_DOWNLOAD);
-        opt
-    };
+    let opt = Opt::from_cli()?;
 
-    let m3u8_url: Url = Url::parse(&opt.url)?;
-    let base_url = &m3u8_url;
+    let m3u8_content = get_m3u8_content(&opt).await?;
 
     // TODO: use builder
     // 生成临时下载目录
-    let tmp_dir = make_sure_url_dir(m3u8_url.as_str()).await?;
+    let tmp_dir = make_sure_url_dir(&m3u8_content).await?;
 
     // 下载文件清单文件
     let ts_list_abs_path = tmp_dir.as_ref().join(TS_LIST_PATH);
 
-    let ts_list_cotent_origin = request::get_bytes(m3u8_url.clone()).await?;
-    let media_playlist = m3u8::parse(base_url, &ts_list_cotent_origin).await?;
+    // let ts_list_cotent_origin = request::get_bytes(m3u8_url.clone()).await?;
+    let media_playlist = m3u8::parse(opt.url.as_ref(), &m3u8_content).await?;
     let segements_uri_list: Vec<Url> = media_playlist
         .segments
         .iter()
@@ -63,6 +59,11 @@ async fn main() -> Result<()> {
             if let Ok(uri) = Url::parse(uri) {
                 anyhow::Ok(uri)
             } else {
+                let base_url = opt.url.as_ref().ok_or_else(|| {
+                    anyhow!(
+                        "the url in the m3u8 file is not absolute, please support the url option"
+                    )
+                })?;
                 let uri = base_url.join(uri)?;
                 anyhow::Ok(uri)
             }
@@ -174,6 +175,18 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+async fn get_m3u8_content(opt: &Opt) -> Result<Vec<u8>> {
+    if let Some(url) = &opt.url {
+        let content = request::get_bytes(url.clone()).await?;
+        Ok(content)
+    } else if let Some(path) = &opt.source {
+        let content = fs::read(path).await?;
+        Ok(content)
+    } else {
+        unreachable!("must set url or source_file option")
+    }
+}
+
 async fn download_file<U, P>(url: U, dest: P, pb: ProgressBar) -> Result<()>
 where
     U: IntoUrl,
@@ -242,15 +255,15 @@ where
     Ok(())
 }
 
-async fn make_sure_url_dir(url: &str) -> Result<impl AsRef<Path>> {
+async fn make_sure_url_dir(bytes: &[u8]) -> Result<impl AsRef<Path>> {
     // url hash
-    let url_hash = util::hash(&url);
+    let hash = util::hash(&bytes);
 
     // create cache_dir
     let url_dir = ProjectDirs::from("", "", "m3u8-downloader")
         .ok_or_else(|| anyhow::anyhow!("not find ProjectDirs"))?
         .cache_dir()
-        .join(url_hash.to_string());
+        .join(hash.to_string());
     println!("use cache dir: {}", url_dir.to_string_lossy());
     make_sure_dir_exsit(url_dir).await
 }

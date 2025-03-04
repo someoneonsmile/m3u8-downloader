@@ -10,7 +10,7 @@ use url::Url;
 
 use crate::request;
 
-pub(crate) async fn parse(base_uri: &Url, input: &[u8]) -> Result<MediaPlaylist> {
+pub async fn parse(base_uri: Option<&Url>, input: &[u8]) -> Result<MediaPlaylist> {
     let c = inner_parse(
         base_uri,
         input,
@@ -22,7 +22,7 @@ pub(crate) async fn parse(base_uri: &Url, input: &[u8]) -> Result<MediaPlaylist>
 }
 
 async fn inner_parse<S, D>(
-    base_uri: &Url,
+    base_uri: Option<&Url>,
     input: &[u8],
     select_fn: S,
     download_fn: D,
@@ -46,7 +46,11 @@ where
                 .iter()
                 .filter(|v| !v.is_i_frame)
                 .filter_map(|v| {
-                    let full_rui = base_uri.join(&v.uri).ok()?;
+                    let full_rui = if let Some(base_uri) = base_uri {
+                        base_uri.join(&v.uri).ok()?
+                    } else {
+                        Url::parse(&v.uri).ok()?
+                    };
                     let wh = v.resolution.map(|it| format!("{}x{}", it.width, it.height));
                     Some((
                         full_rui,
@@ -90,7 +94,7 @@ mod test {
             let f = f?;
             let a: Vec<u8> = fs::read(dbg!(f.path()))?;
             super::inner_parse(
-                &base_uri,
+                Some(&base_uri),
                 &a,
                 |_items| Ok(0),
                 async |_url| {
