@@ -14,8 +14,10 @@ Usage: m3u8-downloader [OPTIONS] --dest <DEST> <--source <SOURCE>|--url <URL>>
 Options:
   -d, --dest <DEST>      dest path
   -w, --worker <WORKER>  parallel worker num [default: 20]
-  -s, --source <SOURCE>  source used for from file
-      --url <URL>        url to download
+  -s, --source <SOURCE>  source mode used for from file
+                         when `--file` file content segement's uri is not absolute
+                         should add the `--url` option
+      --url <URL>        url mode used for from url
   -h, --help             Print help
   -V, --version          Print version
 ```
