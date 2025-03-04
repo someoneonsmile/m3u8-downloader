@@ -8,19 +8,19 @@ use reqwest::{Client, IntoUrl, Response};
 static HTTP_CLIENT: LazyLock<reqwest::Result<Client>> =
     LazyLock::new(|| reqwest::ClientBuilder::new().use_rustls_tls().build());
 
-pub(crate) async fn get_bytes<U: IntoUrl>(url: U) -> Result<Vec<u8>> {
+pub async fn get_bytes<U: IntoUrl>(url: U) -> Result<Vec<u8>> {
     let c = HTTP_CLIENT.as_ref()?;
     let bytes: Vec<u8> = c.get(url).send().await?.bytes().await?.to_vec();
     Ok(bytes)
 }
 
-pub(crate) async fn get_text<U: IntoUrl>(url: U) -> Result<String> {
+pub async fn get_text<U: IntoUrl>(url: U) -> Result<String> {
     let c = HTTP_CLIENT.as_ref()?;
     let text = c.get(url).send().await?.text().await?;
     Ok(text)
 }
 
-pub(crate) async fn get<U: IntoUrl>(url: U) -> Result<Response> {
+pub async fn get<U: IntoUrl>(url: U) -> Result<Response> {
     let c = HTTP_CLIENT.as_ref()?;
     let bs = c.get(url).send().await?;
     Ok(bs)

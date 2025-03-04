@@ -9,15 +9,17 @@ cli m3u8-downloader
 ## Usage
 
 ```
-USAGE:
-    m3u8-downloader [OPTIONS] --url <URL> --dest <DEST>
+Usage: m3u8-downloader [OPTIONS] --dest <DEST> <--source <SOURCE>|--url <URL>>
 
-OPTIONS:
-    -d, --dest <DEST>        dest path
-    -h, --help               Print help information
-        --url <URL>          url to download
-    -V, --version            Print version information
-    -w, --worker <WORKER>    parallel worker num [default: 20]
+Options:
+  -d, --dest <DEST>      dest path
+  -w, --worker <WORKER>  parallel worker num [default: 20]
+  -s, --source <SOURCE>  source mode used for from file
+                         when `--file` file content segement's uri is not absolute
+                         should add the `--url` option
+      --url <URL>        url mode used for from url
+  -h, --help             Print help
+  -V, --version          Print version
 ```
 
 ## Required
