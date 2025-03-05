@@ -21,7 +21,7 @@ pub struct Cli {
 #[group(required = true, multiple = true)]
 pub struct Sources {
     /// source mode used for from file
-    /// when `--file` file content segement's uri is not absolute
+    /// when `--source` file content segement's uri is not absolute
     /// should add the `--url` option
     #[arg(short, long)]
     pub source: Option<PathBuf>,

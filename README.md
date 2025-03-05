@@ -15,7 +15,7 @@ Options:
   -d, --dest <DEST>      dest path
   -w, --worker <WORKER>  parallel worker num [default: 20]
   -s, --source <SOURCE>  source mode used for from file
-                         when `--file` file content segement's uri is not absolute
+                         when `--source` file content segement's uri is not absolute
                          should add the `--url` option
       --url <URL>        url mode used for from url
   -h, --help             Print help
@@ -32,7 +32,7 @@ Options:
 
 ## TODO
 
-- [ ] read from file
+- [x] read from file
 - [x] url parse
 - [x] http/socks proxy
 - [x] gzip / brotli / zstd support
