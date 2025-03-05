@@ -1,6 +1,6 @@
 [package]
 name = "m3u8-downloader"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -39,6 +39,8 @@ url = "2"
 # log = {version = "0"}
 # env_logger = "0"
 # lazy_static = "1"
+[target.'cfg(target_env = "musl")'.dependencies]
+mimalloc = "0"
 
 [build-dependencies]
 clap = { version = "4", features = ["derive"] }
