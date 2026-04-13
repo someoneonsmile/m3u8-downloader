@@ -189,7 +189,7 @@ jobs:
           mode: "COMMIT"
 
       - name: Create tag release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           append_body: true
@@ -204,7 +204,7 @@ jobs:
             artifacts/*
 
       - name: Create stable release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           append_body: true
