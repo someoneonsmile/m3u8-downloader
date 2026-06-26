@@ -12,6 +12,7 @@ const_format = { version = "0" }
 dialoguer = "0"
 directories = "6"
 futures = "0"
+sha2 = "0"
 base64 = "0"
 
 # crate.io indicatif has bug

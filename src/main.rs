@@ -265,13 +265,13 @@ where
 
 async fn make_sure_url_dir(bytes: &[u8]) -> Result<impl AsRef<Path>> {
     // url hash
-    let hash = util::hash(&bytes);
+    let hash = util::hash(bytes);
 
     // create cache_dir
     let url_dir = ProjectDirs::from("", "", "m3u8-downloader")
         .ok_or_else(|| anyhow::anyhow!("not find ProjectDirs"))?
         .cache_dir()
-        .join(hash.to_string());
+        .join(&hash);
     println!("use cache dir: {}", url_dir.to_string_lossy());
     make_sure_dir_exsit(url_dir).await
 }

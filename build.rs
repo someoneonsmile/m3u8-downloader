@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     .into();
     // let outdir: PathBuf = ".".into();
-    println!("outdir: {outdir:?}");
+    println!("outdir: {}", outdir.display());
 
     let mut cmd = Cli::command();
     //     .group(
