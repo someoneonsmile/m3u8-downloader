@@ -32,15 +32,12 @@ where
     D: AsyncFn(&Url) -> Result<Vec<u8>>,
 {
     let decoded = BASE64_STANDARD.decode(input);
-    let input = match &decoded {
-        Ok(decoded_data) => decoded_data.as_slice(),
-        Err(_) => {
-            eprintln!("警告: Base64 解码失败，使用原始内容");
-            input
-        }
+    let input = if let Ok(decoded_data) = &decoded { decoded_data.as_slice() } else {
+        eprintln!("警告: Base64 解码失败，使用原始内容");
+        input
     };
 
-    let parsed = m3u8_rs::parse_playlist_res(input).map_err(|e| anyhow!("{:?}", e))?;
+    let parsed = m3u8_rs::parse_playlist_res(input).map_err(|e| anyhow!("{e:?}"))?;
     match parsed {
         Playlist::MasterPlaylist(pl) => {
             let (uris, texts): (Vec<Url>, Vec<String>) = pl
@@ -73,15 +70,12 @@ where
                 .ok_or_else(|| anyhow!("select out of range for variants"))?;
             let content = download_fn(uri).await?;
             let decoded = BASE64_STANDARD.decode(&content);
-            let content = match decoded {
-                Ok(decoded_data) => decoded_data,
-                Err(_) => {
-                    eprintln!("警告: 变体内容 Base64 解码失败，使用原始内容");
-                    content
-                }
+            let content = if let Ok(decoded_data) = decoded { decoded_data } else {
+                eprintln!("警告: 变体内容 Base64 解码失败，使用原始内容");
+                content
             };
             let pl: MediaPlaylist =
-                m3u8_rs::parse_media_playlist_res(&content).map_err(|e| anyhow!("{:?}", e))?;
+                m3u8_rs::parse_media_playlist_res(&content).map_err(|e| anyhow!("{e:?}"))?;
             Ok(pl)
         }
         Playlist::MediaPlaylist(pl) => Ok(pl),
