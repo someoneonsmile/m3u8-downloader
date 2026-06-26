@@ -215,13 +215,8 @@ where
         // 进度条长度
         pb.set_length(total_size);
 
-        let part_path = format!(
-            "{}{}",
-            dest.as_ref()
-                .to_str()
-                .ok_or_else(|| anyhow::format_err!("dest({:?}) to_str error", dest.as_ref()))?,
-            ".part"
-        );
+        let mut part_path = dest.as_ref().to_path_buf();
+        part_path.set_extension("part");
         let mut part = fs::File::create(&part_path).await?;
         let mut downloaded: u64 = 0;
 
