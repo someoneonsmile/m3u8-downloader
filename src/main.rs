@@ -170,7 +170,9 @@ async fn main() -> Result<()> {
     merge_video(tmp_dir.as_ref(), opt.dest).await?;
 
     // 删除临时文件
-    fs::remove_dir_all(tmp_dir).await?;
+    if let Err(e) = fs::remove_dir_all(tmp_dir).await {
+        eprintln!("警告: 删除临时目录失败: {e}");
+    }
 
     // 打印用时统计
     println!(
