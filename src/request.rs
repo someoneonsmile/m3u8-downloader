@@ -4,9 +4,9 @@ use std::sync::LazyLock;
 
 use reqwest::{Client, IntoUrl, Response};
 
-/// DNS resolve with `trust_dns`
+/// DNS resolve with `hickory-dns`
 static HTTP_CLIENT: LazyLock<reqwest::Result<Client>> =
-    LazyLock::new(|| reqwest::ClientBuilder::new().use_rustls_tls().build());
+    LazyLock::new(|| reqwest::ClientBuilder::new().tls_backend_rustls().build());
 
 pub async fn get_bytes<U: IntoUrl>(url: U) -> Result<Vec<u8>> {
     let c = HTTP_CLIENT.as_ref()?;
