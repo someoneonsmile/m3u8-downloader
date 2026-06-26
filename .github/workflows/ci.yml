@@ -11,8 +11,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  FETCH_DEPTH: 0
-  USE_CROSS: false
 
 jobs:
   test:
@@ -20,53 +18,36 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: ${{ env.FETCH_DEPTH }}
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: check
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: ${{ env.USE_CROSS }}
-          command: check
+        run: cargo check
       - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: ${{ env.USE_CROSS }}
-          command: test
+        run: cargo test
 
   rustfmt:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: ${{ env.FETCH_DEPTH }}
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
       - uses: Swatinem/rust-cache@v2
-      - name: build
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: ${{ env.USE_CROSS }}
-          command: fmt
-          args: --all -- --check
+      - name: fmt
+        run: cargo fmt --all -- --check
 
   clippy-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: ${{ env.FETCH_DEPTH }}
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      - name: clippy-check
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN}}
-          use-cross: ${{ env.USE_CROSS }}
-          args: --all-features
+      - name: clippy
+        run: cargo clippy --all-features -- -D warnings
