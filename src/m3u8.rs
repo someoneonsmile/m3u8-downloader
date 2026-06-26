@@ -81,7 +81,7 @@ where
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use anyhow::Result;
     use std::fs;
     use url::Url;
