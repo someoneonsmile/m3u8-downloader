@@ -203,37 +203,42 @@ where
         return Ok(());
     }
     // https://gist.github.com/giuliano-oliveira/4d11d6b3bb003dba3a1b53f43d81b30d
-    let response = request::get(url).await?;
+    let result = async {
+        let response = request::get(url).await?;
 
-    let total_size = response
-        .content_length()
-        .ok_or_else(|| anyhow::format_err!("can't get the content_length"))?;
+        let total_size = response
+            .content_length()
+            .ok_or_else(|| anyhow::format_err!("can't get the content_length"))?;
 
-    // 进度条长度
-    pb.set_length(total_size);
+        // 进度条长度
+        pb.set_length(total_size);
 
-    let part_path = format!(
-        "{}{}",
-        dest.as_ref()
-            .to_str()
-            .ok_or_else(|| anyhow::format_err!("dest({:?}) to_str error", dest.as_ref()))?,
-        ".part"
-    );
-    let mut part = fs::File::create(&part_path).await?;
-    let mut downloaded: u64 = 0;
+        let part_path = format!(
+            "{}{}",
+            dest.as_ref()
+                .to_str()
+                .ok_or_else(|| anyhow::format_err!("dest({:?}) to_str error", dest.as_ref()))?,
+            ".part"
+        );
+        let mut part = fs::File::create(&part_path).await?;
+        let mut downloaded: u64 = 0;
 
-    // 流下载
-    let mut stream = response.bytes_stream();
-    while let Some(item) = stream.next().await {
-        let chunk = item?;
-        part.write_all(&chunk).await?;
-        downloaded = std::cmp::min(downloaded + (chunk.len() as u64), total_size);
-        pb.set_position(downloaded);
+        // 流下载
+        let mut stream = response.bytes_stream();
+        while let Some(item) = stream.next().await {
+            let chunk = item?;
+            part.write_all(&chunk).await?;
+            downloaded = std::cmp::min(downloaded + (chunk.len() as u64), total_size);
+            pb.set_position(downloaded);
+        }
+
+        fs::rename(part_path, dest).await?;
+        Ok(())
     }
+    .await;
 
-    fs::rename(part_path, dest).await?;
     pb.finish_and_clear();
-    Ok(())
+    result
 }
 
 async fn merge_video<P1, P2>(tmp_dir: P1, dest: P2) -> Result<()>
